@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-23 23:54
+ * @ Modified time: 2025-02-25 13:44
  * @ Description:
  */
 
@@ -237,5 +237,15 @@ int qwave_frq_set(QWaveGen *gen, qfp_t frq)
     gen->frq = frq;
     gen->period = 1.0 / frq;
     gen->half_period = gen->period * 0.5;
+    return 0;
+}
+
+int qwave_clr(QWaveGen *gen)
+{
+    if(!gen) {
+        return -1;
+    }
+    gen->t = 0;
+    gen->output = 0;
     return 0;
 }
