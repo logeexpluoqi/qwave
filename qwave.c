@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-27 17:08
+ * @ Modified time: 2025-02-28 00:00
  * @ Description:
  */
 
@@ -42,7 +42,7 @@ static inline qfp_t _deg2rpm(qfp_t deg)
 
 static inline qfp_t _fmodf(qfp_t x, qfp_t y)
 {
-    if (y == 0) {
+    if(y == 0) {
         return NAN;
     }
     return (x - ((int)(x / y)) * y);
@@ -78,52 +78,51 @@ static inline qfp_t _fcos(qfp_t x)
     return _fsin(x + 90);
 }
 
-static inline qfp_t _gen_sine(QWaveGen *gen)
+static inline qfp_t _gen_sin(QWaveGen *gen)
 {
     qfp_t x = (gen->t / gen->period) * 360;
-    gen->output = _fsin(x) + gen->bias;
+    gen->output = _fsin(gen->frq * x) + gen->bias;
     return gen->output;
 }
 
-static inline qfp_t _gen_triangle(QWaveGen *gen)
+static inline qfp_t _gen_tri(QWaveGen *gen)
 {
     if(!gen) {
         return 0;
     }
-    if(gen->t < gen->half_period) {
-        // Rising segment: from -bias to +bias
-        gen->output = -1 + (2.0 / gen->half_period) * gen->t;
+
+    qfp_t norm = gen->t / gen->period;
+
+    if(norm < 0.25) {
+        gen->output = 4 * norm;
+    } else if(norm < 0.75) {
+        gen->output = 2 - 4 * norm;
     } else {
-        // Falling segment: from +bias back to -bias
-        gen->output = 1 - (2.0 / gen->half_period) * (gen->t - gen->half_period);
+        gen->output = 4 * norm - 4;
     }
     gen->output += gen->bias;
     return gen->output;
 }
 
-static inline qfp_t _gen_sawtooth(QWaveGen *gen)
+static inline qfp_t _gen_saw(QWaveGen *gen)
 {
     if(!gen) {
         return 0;
     }
-    // Calculate the current output linear rise value
-    gen->output = -1 + (2.0 / gen->period) * gen->t;
-    gen->output += gen->bias;
+    gen->output = gen->t / gen->period;
     return gen->output;
 }
 
-static inline qfp_t _gen_antsawtooth(QWaveGen *gen)
+static inline qfp_t _gen_antsaw(QWaveGen *gen)
 {
     if(!gen) {
         return 0;
     }
-    // Sawtooth: output increases linearly from -1 to +1
-    gen->output = 1 - (2.0 / gen->period) * gen->t;
-    gen->output += gen->bias;
+    gen->output = - (gen->t / gen->period);
     return gen->output;
 }
 
-static inline qfp_t _gen_square(QWaveGen *gen)
+static inline qfp_t _gen_sqr(QWaveGen *gen)
 {
     if(!gen) {
         return 0;
@@ -149,7 +148,7 @@ static inline qfp_t _gen_noise(QWaveGen *gen)
     x ^= x << 5;
     gen->prng_state = x;
     // Map x (0 ~ 0xffffffffu) to [-1, 1]
-    gen->output = ((qfp_t)x / 0xffffffffu) * 2 - 1 + gen->bias;
+    gen->output = ((qfp_t)x / 0xffffffffu) * 2 + gen->bias;
     return gen->output;
 }
 
@@ -194,15 +193,15 @@ static inline qfp_t _qwave_out(QWaveGen *gen)
 {
     switch(gen->type) {
     case QWAVE_TYPE_SINE:
-        return _gen_sine(gen);
+        return _gen_sin(gen);
     case QWAVE_TYPE_TRIANGLE:
-        return _gen_triangle(gen);
+        return _gen_tri(gen);
     case QWAVE_TYPE_SAWTOOTH:
-        return _gen_sawtooth(gen);
+        return _gen_saw(gen);
     case QWAVE_TYPE_ANTSAWTOOTH:
-        return _gen_antsawtooth(gen);
+        return _gen_antsaw(gen);
     case QWAVE_TYPE_SQUARE:
-        return _gen_square(gen);
+        return _gen_sqr(gen);
     case QWAVE_TYPE_NOISE:
         return _gen_noise(gen);
     default:
@@ -215,12 +214,14 @@ qfp_t qwave_tick_out(QWaveGen *gen)
     if(!gen) {
         return 0;
     }
+
+    qfp_t out = _qwave_out(gen);
+
     gen->t += gen->ts;
     if(gen->t >= gen->period) {
         gen->t -= gen->period;
     }
-
-    return _qwave_out(gen);
+    return out;
 }
 
 qfp_t qwave_time_out(QWaveGen *gen, qfp_t dus)
@@ -228,11 +229,12 @@ qfp_t qwave_time_out(QWaveGen *gen, qfp_t dus)
     if(!gen) {
         return 0;
     }
-    gen->t += dus;
-    if(gen->t >= gen->period * 1e6) {
-        gen->t -= gen->period * 1e6;
+    qfp_t out = _qwave_out(gen);
+    gen->t += dus * 1e-6;
+    if(gen->t >= gen->period) {
+        gen->t -= gen->period;
     }
-    return _qwave_out(gen);
+    return out;
 }
 
 int qwave_bias_set(QWaveGen *gen, qfp_t bias)
