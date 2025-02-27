@@ -176,7 +176,7 @@ int qwave_tick_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bi
 
 int qwave_time_init(QWaveGen *gen, QWaveType type, qfp_t frq, qfp_t bias, uint32_t seed)
 {
-    return qwave_init(gen, type, 10 * frq, frq, bias, seed);
+    return qwave_tick_init(gen, type, 10 * frq, frq, bias, seed);
 }
 
 int qwave_signal_set(QWaveGen *gen, QWaveType type)
