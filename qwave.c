@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-27 17:04
+ * @ Modified time: 2025-02-27 17:08
  * @ Description:
  */
 
@@ -176,7 +176,7 @@ int qwave_tick_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bi
 
 int qwave_time_init(QWaveGen *gen, QWaveType type, qfp_t frq, qfp_t bias, uint32_t seed)
 {
-    return qwave_init(gen, type, 1.0, frq, bias, seed);
+    return qwave_init(gen, type, 10 * frq, frq, bias, seed);
 }
 
 int qwave_signal_set(QWaveGen *gen, QWaveType type)
@@ -190,16 +190,8 @@ int qwave_signal_set(QWaveGen *gen, QWaveType type)
     return 0;
 }
 
-qfp_t qwave_tick_out(QWaveGen *gen)
+static inline qfp_t _qwave_out(QWaveGen *gen)
 {
-    if(!gen) {
-        return 0;
-    }
-    gen->t += gen->ts;
-    if(gen->t >= gen->period) {
-        gen->t -= gen->period;
-    }
-
     switch(gen->type) {
     case QWAVE_TYPE_SINE:
         return _gen_sine(gen);
@@ -218,6 +210,19 @@ qfp_t qwave_tick_out(QWaveGen *gen)
     }
 }
 
+qfp_t qwave_tick_out(QWaveGen *gen)
+{
+    if(!gen) {
+        return 0;
+    }
+    gen->t += gen->ts;
+    if(gen->t >= gen->period) {
+        gen->t -= gen->period;
+    }
+
+    return _qwave_out(gen);
+}
+
 qfp_t qwave_time_out(QWaveGen *gen, qfp_t dus)
 {
     if(!gen) {
@@ -227,22 +232,7 @@ qfp_t qwave_time_out(QWaveGen *gen, qfp_t dus)
     if(gen->t >= gen->period * 1e6) {
         gen->t -= gen->period * 1e6;
     }
-    switch(gen->type) {
-    case QWAVE_TYPE_SINE:
-        return _gen_sine(gen);
-    case QWAVE_TYPE_TRIANGLE:
-        return _gen_triangle(gen);
-    case QWAVE_TYPE_SAWTOOTH:
-        return _gen_sawtooth(gen);
-    case QWAVE_TYPE_ANTSAWTOOTH:
-        return _gen_antsawtooth(gen);
-    case QWAVE_TYPE_SQUARE:
-        return _gen_square(gen);
-    case QWAVE_TYPE_NOISE:
-        return _gen_noise(gen);
-    default:
-        return 0;
-    }
+    return _qwave_out(gen);
 }
 
 int qwave_bias_set(QWaveGen *gen, qfp_t bias)
