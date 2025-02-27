@@ -148,7 +148,7 @@ static inline qfp_t _gen_noise(QWaveGen *gen)
     x ^= x << 5;
     gen->prng_state = x;
     // Map x (0 ~ 0xffffffffu) to [-1, 1]
-    gen->output = ((qfp_t)x / 0xffffffffu) * 2 + gen->bias;
+    gen->output = ((qfp_t)x / 0xffffffffu) * 2 - 1 + gen->bias;
     return gen->output;
 }
 
