@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-27 16:47
+ * @ Modified time: 2025-02-27 17:04
  * @ Description:
  */
 
@@ -153,7 +153,7 @@ static inline qfp_t _gen_noise(QWaveGen *gen)
     return gen->output;
 }
 
-int qwave_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bias, uint32_t seed)
+int qwave_tick_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bias, uint32_t seed)
 {
     if(!gen || fs <= 0 || frq <= 0) {
         return -1;
@@ -172,6 +172,11 @@ int qwave_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bias, u
     gen->prng_state = (seed == 0) ? 2463534242UL : seed;
 
     return 0;
+}
+
+int qwave_time_init(QWaveGen *gen, QWaveType type, qfp_t frq, qfp_t bias, uint32_t seed)
+{
+    return qwave_init(gen, type, 1.0, frq, bias, seed);
 }
 
 int qwave_signal_set(QWaveGen *gen, QWaveType type)
