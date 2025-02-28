@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-27 20:00
+ * @ Modified time: 2025-02-28 23:37
  * @ Description:
  */
 
@@ -72,7 +72,7 @@ int qwave_time_init(QWaveGen *gen, QWaveType type, qfp_t frq, qfp_t bias, uint32
  * @note This function updates the internal state of the waveform generator and returns the next output value,
  *       sampling frequency is depending on parameter fs.
  */
-qfp_t qwave_tick_out(QWaveGen *gen);
+qfp_t qwave_tick_signal_output(QWaveGen *gen);
 
 /**
  * @brief Generate the output value of the waveform at a specific time.
@@ -81,7 +81,7 @@ qfp_t qwave_tick_out(QWaveGen *gen);
  * @return The output value of the waveform at the real time.
  * @note This function ignores the fs parameter, the sample rate is dependent on the time step.
  */
-qfp_t qwave_time_out(QWaveGen *gen, qfp_t dus);
+qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dus);
 
 /**
  * @brief Set the bias or offset of the waveform.

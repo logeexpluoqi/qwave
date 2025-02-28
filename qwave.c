@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-28 00:00
+ * @ Modified time: 2025-02-28 00:17
  * @ Description:
  */
 
@@ -209,7 +209,7 @@ static inline qfp_t _qwave_out(QWaveGen *gen)
     }
 }
 
-qfp_t qwave_tick_out(QWaveGen *gen)
+qfp_t qwave_tick_signal_output(QWaveGen *gen)
 {
     if(!gen) {
         return 0;
@@ -224,7 +224,7 @@ qfp_t qwave_tick_out(QWaveGen *gen)
     return out;
 }
 
-qfp_t qwave_time_out(QWaveGen *gen, qfp_t dus)
+qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dus)
 {
     if(!gen) {
         return 0;
