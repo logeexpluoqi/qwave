@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-02 22:57
+ * @ Modified time: 2025-03-02 23:42
  * @ Description:
  */
 
@@ -162,7 +162,7 @@ static inline qfp_t _gen_noise(QWaveGen *gen)
     return gen->output;
 }
 
-int qwave_tick_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bias, uint32_t seed)
+int qwave_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bias, uint32_t seed)
 {
     if(!gen || fs <= 0 || frq <= 0) {
         return -1;
@@ -182,11 +182,6 @@ int qwave_tick_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bi
     gen->prng_state = (seed == 0) ? 2463534242UL : seed;
 
     return 0;
-}
-
-int qwave_time_init(QWaveGen *gen, QWaveType type, qfp_t frq, qfp_t bias, uint32_t seed)
-{
-    return qwave_tick_init(gen, type, 10 * frq, frq, bias, seed);
 }
 
 int qwave_signal_set(QWaveGen *gen, QWaveType type)
@@ -220,31 +215,15 @@ static inline qfp_t _qwave_out(QWaveGen *gen)
     }
 }
 
-qfp_t qwave_tick_signal_output(QWaveGen *gen)
+qfp_t qwave_signal_output(QWaveGen *gen)
 {
     if(!gen) {
         return 0;
     }
 
-    qfp_t out = _qwave_out(gen);
+    qfp_t out = _qwave_out(gen) * gen->amp;
 
     gen->t += gen->ts;
-    if(gen->t >= gen->period) {
-        gen->t -= gen->period;
-    }
-    return out;
-}
-
-qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dms)
-{
-    if(!gen) {
-        return 0;
-    }
-    qfp_t out = _qwave_out(gen) * gen->amp;
-    if((dms < 0) || (dms == NAN) || (dms == INFINITY)) {
-        dms = 0;
-    }
-    gen->t += dms * 1e-3;
     if(gen->t >= gen->period) {
         gen->t = _fmodf(gen->t, gen->period);
     }

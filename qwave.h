@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-02 20:29
+ * @ Modified time: 2025-03-02 23:35
  * @ Description:
  */
 
@@ -57,18 +57,7 @@ typedef struct {
  * @param seed: seed value for the pseudo-random number generator.
  * @return 0 on success, non-zero on failure.
  */
-int qwave_tick_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bias, uint32_t seed);
-
-/**
- * @brief Initialize a QWaveGen structure with the given parameters, and set the initial output value based on time.
- * @param gen: pointer to the QWaveGen structure to be initialized.
- * @param type: type of the waveform (QWaveType).
- * @param frq: wave frequency in Hz.
- * @param bias: bias or offset of the waveform.
- * @param seed: seed value for the pseudo-random number generator.
- * @return 0 on success, non-zero on failure.
- */
-int qwave_time_init(QWaveGen *gen, QWaveType type, qfp_t frq, qfp_t bias, uint32_t seed);
+int qwave_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bias, uint32_t seed);
 
 /**
  * @brief Generate the next output value of the waveform based on the current state.
@@ -77,16 +66,7 @@ int qwave_time_init(QWaveGen *gen, QWaveType type, qfp_t frq, qfp_t bias, uint32
  * @note This function updates the internal state of the waveform generator and returns the next output value,
  *       sampling frequency is depending on parameter fs.
  */
-qfp_t qwave_tick_signal_output(QWaveGen *gen);
-
-/**
- * @brief Generate the output value of the waveform at a specific time.
- * @param gen: pointer to the QWaveGen structure.
- * @param dus: time in us.
- * @return The output value of the waveform at the real time.
- * @note This function ignores the fs parameter, the sample rate is dependent on the time step.
- */
-qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dms);
+qfp_t qwave_signal_output(QWaveGen *gen);
 
 /**
  * @brief Set the bias or offset of the waveform.
