@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-02 20:30
+ * @ Modified time: 2025-03-02 22:57
  * @ Description:
  */
 
@@ -45,7 +45,17 @@ static inline qfp_t _fmodf(qfp_t x, qfp_t y)
     if(y == 0) {
         return NAN;
     }
-    return (x - ((int)(x / y)) * y);
+
+    qfp_t abs_y = y < 0 ? -y : y;
+    qfp_t sign_x = x < 0 ? -1 : 1;
+    qfp_t abs_x = x < 0 ? -x : x;
+
+    qfp_t div = abs_x / abs_y;
+    qfp_t int_part = div >= 0 ? (qfp_t)((int)div) : -(qfp_t)((int)-div);
+
+    qfp_t result = abs_x - (int_part * abs_y);
+
+    return sign_x * result;
 }
 
 static qfp_t _fsin(qfp_t deg)

@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-02 20:08
+ * @ Modified time: 2025-03-02 20:29
  * @ Description:
  */
 
@@ -17,6 +17,10 @@ typedef float qfp_t;
 
 #ifndef NAN
 #define NAN (0.0f / 0.0f)
+#endif
+
+#ifndef INFINITY
+#define INFINITY (1.0f / 0.0f)
 #endif
 
 typedef enum {
