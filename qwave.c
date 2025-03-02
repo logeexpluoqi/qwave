@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-02 20:08
+ * @ Modified time: 2025-03-02 20:30
  * @ Description:
  */
 
@@ -231,9 +231,12 @@ qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dms)
         return 0;
     }
     qfp_t out = _qwave_out(gen) * gen->amp;
+    if((dms < 0) || (dms == NAN) || (dms == INFINITY)) {
+        dms = 0;
+    }
     gen->t += dms * 1e-3;
     if(gen->t >= gen->period) {
-        gen->t -= gen->period;
+        gen->t = _fmodf(gen->t, gen->period);
     }
     return out;
 }
