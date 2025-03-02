@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-02 23:42
+ * @ Modified time: 2025-03-03 00:12
  * @ Description:
  */
 
@@ -29,16 +29,6 @@ static const qfp_t _fast_sin_table[91] = {
     0.996195,      0.997564,      0.99863,       0.999391,      0.999848,
     1.0
 };
-
-static inline qfp_t _rpm2deg(qfp_t rpm)
-{
-    return 6 * rpm;
-}
-
-static inline qfp_t _deg2rpm(qfp_t deg)
-{
-    return deg / 6;
-}
 
 static inline qfp_t _fmodf(qfp_t x, qfp_t y)
 {
@@ -91,7 +81,7 @@ static inline qfp_t _fcos(qfp_t x)
 static inline qfp_t _gen_sin(QWaveGen *gen)
 {
     qfp_t x = (gen->t / gen->period) * 360;
-    gen->output = _fsin(gen->frq * x) + gen->bias;
+    gen->output = _fsin(x) + gen->bias;
     return gen->output;
 }
 
