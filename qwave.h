@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-28 23:37
+ * @ Modified time: 2025-03-02 19:49
  * @ Description:
  */
 
@@ -37,6 +37,7 @@ typedef struct {
     qfp_t t;              /**< Current time or phase of the waveform. */
     qfp_t ts;             /**< Time step or sampling interval. */
     qfp_t bias;           /**< Bias or offset of the waveform. */
+    qfp_t amp;            /**< Amplitude of the waveform. */
     qfp_t output;         /**< Current output value of the waveform. */
     uint32_t seed;        /**< Seed value for the pseudo-random number generator. */
     uint32_t prng_state;  /**< State of the pseudo-random number generator. */
@@ -106,6 +107,14 @@ int qwave_fs_set(QWaveGen *gen, qfp_t fs);
  * @return 0 on success, non-zero on failure.
  */
 int qwave_frq_set(QWaveGen *gen, qfp_t frq);
+
+/**
+ * @brief Set the amplitude of the waveform.
+ * @param gen: pointer to the QWaveGen structure.
+ * @param amp: new amplitude value.
+ * @return 0 on success, non-zero on failure.
+ */
+int qwave_amp_set(QWaveGen *gen, qfp_t amp);
 
 /**
  * @brief Set the type of the waveform.

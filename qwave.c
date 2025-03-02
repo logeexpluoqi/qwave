@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-02-28 00:17
+ * @ Modified time: 2025-03-02 19:50
  * @ Description:
  */
 
@@ -166,6 +166,7 @@ int qwave_tick_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bi
     gen->half_period = gen->period * 0.5;
     gen->ts = 1.0 / fs;
     gen->output = 0;
+    gen->amp = 0.0;
     gen->t = 0;
     gen->seed = seed;
     gen->prng_state = (seed == 0) ? 2463534242UL : seed;
@@ -229,7 +230,7 @@ qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dus)
     if(!gen) {
         return 0;
     }
-    qfp_t out = _qwave_out(gen);
+    qfp_t out = _qwave_out(gen) * gen->amp;
     gen->t += dus * 1e-6;
     if(gen->t >= gen->period) {
         gen->t -= gen->period;
@@ -264,6 +265,15 @@ int qwave_frq_set(QWaveGen *gen, qfp_t frq)
     gen->frq = frq;
     gen->period = 1.0 / frq;
     gen->half_period = gen->period * 0.5;
+    return 0;
+}
+
+int qwave_amp_set(QWaveGen *gen, qfp_t amp)
+{
+    if(!gen || amp <= 0) {
+        return -1;
+    }
+    gen->amp = amp;
     return 0;
 }
 
