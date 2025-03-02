@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-02 19:50
+ * @ Modified time: 2025-03-02 20:08
  * @ Description:
  */
 
@@ -225,13 +225,13 @@ qfp_t qwave_tick_signal_output(QWaveGen *gen)
     return out;
 }
 
-qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dus)
+qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dms)
 {
     if(!gen) {
         return 0;
     }
     qfp_t out = _qwave_out(gen) * gen->amp;
-    gen->t += dus * 1e-6;
+    gen->t += dms * 1e-3;
     if(gen->t >= gen->period) {
         gen->t -= gen->period;
     }

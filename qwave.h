@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-02 19:49
+ * @ Modified time: 2025-03-02 20:08
  * @ Description:
  */
 
@@ -82,7 +82,7 @@ qfp_t qwave_tick_signal_output(QWaveGen *gen);
  * @return The output value of the waveform at the real time.
  * @note This function ignores the fs parameter, the sample rate is dependent on the time step.
  */
-qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dus);
+qfp_t qwave_time_signal_output(QWaveGen *gen, qfp_t dms);
 
 /**
  * @brief Set the bias or offset of the waveform.
