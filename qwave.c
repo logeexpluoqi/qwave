@@ -2,7 +2,7 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-03 00:12
+ * @ Modified time: 2025-03-03 17:20
  * @ Description:
  */
 
@@ -80,18 +80,14 @@ static inline qfp_t _fcos(qfp_t x)
 
 static inline qfp_t _gen_sin(QWaveGen *gen)
 {
-    qfp_t x = (gen->t / gen->period) * 360;
+    qfp_t x = (gen->t * 360) * gen->frq;
     gen->output = _fsin(x) + gen->bias;
     return gen->output;
 }
 
 static inline qfp_t _gen_tri(QWaveGen *gen)
 {
-    if(!gen) {
-        return 0;
-    }
-
-    qfp_t norm = gen->t / gen->period;
+    qfp_t norm = gen->t * gen->frq;
 
     if(norm < 0.25) {
         gen->output = 4 * norm;
@@ -106,27 +102,19 @@ static inline qfp_t _gen_tri(QWaveGen *gen)
 
 static inline qfp_t _gen_saw(QWaveGen *gen)
 {
-    if(!gen) {
-        return 0;
-    }
-    gen->output = gen->t / gen->period;
+    gen->output = gen->t * gen->frq;
     return gen->output;
 }
 
 static inline qfp_t _gen_antsaw(QWaveGen *gen)
 {
-    if(!gen) {
-        return 0;
-    }
-    gen->output = - (gen->t / gen->period);
+    gen->output = -(gen->t * gen->frq);
+    gen->output += gen->bias;
     return gen->output;
 }
 
 static inline qfp_t _gen_sqr(QWaveGen *gen)
 {
-    if(!gen) {
-        return 0;
-    }
     // Square wave: first half period: +1; second half: -1.
     if(gen->t < gen->half_period) {
         gen->output = 1;
@@ -139,9 +127,6 @@ static inline qfp_t _gen_sqr(QWaveGen *gen)
 
 static inline qfp_t _gen_noise(QWaveGen *gen)
 {
-    if(!gen) {
-        return 0;
-    }
     uint32_t x = gen->prng_state;
     x ^= x << 13;
     x ^= x >> 17;
@@ -187,6 +172,9 @@ int qwave_signal_set(QWaveGen *gen, QWaveType type)
 
 static inline qfp_t _qwave_out(QWaveGen *gen)
 {
+    if(!gen) {
+        return 0;
+    }
     switch(gen->type) {
     case QWAVE_TYPE_SINE:
         return _gen_sin(gen);
@@ -214,9 +202,7 @@ qfp_t qwave_signal_output(QWaveGen *gen)
     qfp_t out = _qwave_out(gen) * gen->amp;
 
     gen->t += gen->ts;
-    if(gen->t >= gen->period) {
-        gen->t = _fmodf(gen->t, gen->period);
-    }
+    gen->t = _fmodf(gen->t, gen->period);
     return out;
 }
 
