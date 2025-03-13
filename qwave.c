@@ -241,7 +241,7 @@ int qwave_amp_set(QWaveGen *gen, qfp_t amp)
     if(!gen || amp <= 0) {
         return -1;
     }
-    gen->amp = amp;
+    gen->amp = amp / 2;
     return 0;
 }
 
