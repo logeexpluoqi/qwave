@@ -113,6 +113,6 @@ int qwave_signal_set(QWaveGen *gen, QWaveType type);
  * @param gen: pointer to the QWaveGen structure.
  * @return 0 on success, non-zero on failure.
  */
-int qwave_clr(QWaveGen *gen);
+int qwave_reset(QWaveGen *gen);
 
 #endif

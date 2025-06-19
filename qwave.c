@@ -245,7 +245,7 @@ int qwave_amp_set(QWaveGen *gen, qfp_t amp)
     return 0;
 }
 
-int qwave_clr(QWaveGen *gen)
+int qwave_reset(QWaveGen *gen)
 {
     if(!gen) {
         return -1;
