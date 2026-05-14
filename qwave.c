@@ -2,13 +2,13 @@
  * @ Author: luoqi
  * @ Create Time: 2024-11-08 17:16
  * @ Modified by: luoqi
- * @ Modified time: 2025-03-03 17:20
+ * @ Modified time: 2025-03-13 22:48
  * @ Description:
  */
 
 #include "qwave.h"
 
-static const qfp_t _fast_sin_table[91] = {
+static const fp_t _fast_sin_table[91] = {
     0.0,           0.017452406,   0.034899497,   0.052335956,   0.069756474,
     0.087155743,   0.104528463,   0.121869343,   0.139173101,   0.156434465,
     0.173648178,   0.190809,      0.207911,      0.224951,      0.241922,
@@ -30,25 +30,25 @@ static const qfp_t _fast_sin_table[91] = {
     1.0
 };
 
-static inline qfp_t _fmodf(qfp_t x, qfp_t y)
+static inline fp_t _fmodf(fp_t x, fp_t y)
 {
     if(y == 0) {
         return NAN;
     }
 
-    qfp_t abs_y = y < 0 ? -y : y;
-    qfp_t sign_x = x < 0 ? -1 : 1;
-    qfp_t abs_x = x < 0 ? -x : x;
+    fp_t abs_y = y < 0 ? -y : y;
+    fp_t sign_x = x < 0 ? -1 : 1;
+    fp_t abs_x = x < 0 ? -x : x;
 
-    qfp_t div = abs_x / abs_y;
-    qfp_t int_part = div >= 0 ? (qfp_t)((int)div) : -(qfp_t)((int)-div);
+    fp_t div = abs_x / abs_y;
+    fp_t int_part = div >= 0 ? (fp_t)((int)div) : -(fp_t)((int)-div);
 
-    qfp_t result = abs_x - (int_part * abs_y);
+    fp_t result = abs_x - (int_part * abs_y);
 
     return sign_x * result;
 }
 
-static qfp_t _fsin(qfp_t deg)
+static fp_t _fsin(fp_t deg)
 {
     deg = _fmodf(deg, 360);
 
@@ -63,31 +63,31 @@ static qfp_t _fsin(qfp_t deg)
     }
 
     // Calculate the lookup table index and interpolation factor
-    int index = (int)deg;  // 1° resolution
+    int index = (int)deg; // 1° resolution
     if(index >= 90) {
         return sign * _fast_sin_table[90];
     }
-    qfp_t fraction = deg - index;
+    fp_t fraction = deg - index;
 
-    qfp_t sin_val = _fast_sin_table[index] * (1 - fraction) + _fast_sin_table[index + 1] * fraction;
+    fp_t sin_val = _fast_sin_table[index] * (1 - fraction) + _fast_sin_table[index + 1] * fraction;
     return sign * sin_val;
 }
 
-static inline qfp_t _fcos(qfp_t x)
+static inline fp_t _fcos(fp_t x)
 {
     return _fsin(x + 90);
 }
 
-static inline qfp_t _gen_sin(QWaveGen *gen)
+static inline fp_t _gen_sin(QWaveGen *gen)
 {
-    qfp_t x = (gen->t * 360) * gen->frq;
+    fp_t x = (gen->t * 360) * gen->frq;
     gen->output = _fsin(x) + gen->bias;
     return gen->output;
 }
 
-static inline qfp_t _gen_tri(QWaveGen *gen)
+static inline fp_t _gen_tri(QWaveGen *gen)
 {
-    qfp_t norm = gen->t * gen->frq;
+    fp_t norm = gen->t * gen->frq;
 
     if(norm < 0.25) {
         gen->output = 4 * norm;
@@ -100,20 +100,20 @@ static inline qfp_t _gen_tri(QWaveGen *gen)
     return gen->output;
 }
 
-static inline qfp_t _gen_saw(QWaveGen *gen)
+static inline fp_t _gen_saw(QWaveGen *gen)
 {
     gen->output = gen->t * gen->frq;
     return gen->output;
 }
 
-static inline qfp_t _gen_antsaw(QWaveGen *gen)
+static inline fp_t _gen_antsaw(QWaveGen *gen)
 {
     gen->output = -(gen->t * gen->frq);
     gen->output += gen->bias;
     return gen->output;
 }
 
-static inline qfp_t _gen_sqr(QWaveGen *gen)
+static inline fp_t _gen_sqr(QWaveGen *gen)
 {
     // Square wave: first half period: +1; second half: -1.
     if(gen->t < gen->half_period) {
@@ -125,7 +125,7 @@ static inline qfp_t _gen_sqr(QWaveGen *gen)
     return gen->output;
 }
 
-static inline qfp_t _gen_noise(QWaveGen *gen)
+static inline fp_t _gen_noise(QWaveGen *gen)
 {
     uint32_t x = gen->prng_state;
     x ^= x << 13;
@@ -133,11 +133,11 @@ static inline qfp_t _gen_noise(QWaveGen *gen)
     x ^= x << 5;
     gen->prng_state = x;
     // Map x (0 ~ 0xffffffffu) to [-1, 1]
-    gen->output = ((qfp_t)x / 0xffffffffu) * 2 - 1 + gen->bias;
+    gen->output = ((fp_t)x / 0xffffffffu) * 2 - 1 + gen->bias;
     return gen->output;
 }
 
-int qwave_init(QWaveGen *gen, QWaveType type, qfp_t fs, qfp_t frq, qfp_t bias, uint32_t seed)
+int qwave_init(QWaveGen *gen, QWaveType type, fp_t fs, fp_t frq, fp_t bias, uint32_t seed)
 {
     if(!gen || fs <= 0 || frq <= 0) {
         return -1;
@@ -170,7 +170,7 @@ int qwave_signal_set(QWaveGen *gen, QWaveType type)
     return 0;
 }
 
-static inline qfp_t _qwave_out(QWaveGen *gen)
+static inline fp_t _qwave_out(QWaveGen *gen)
 {
     if(!gen) {
         return 0;
@@ -193,20 +193,20 @@ static inline qfp_t _qwave_out(QWaveGen *gen)
     }
 }
 
-qfp_t qwave_signal_output(QWaveGen *gen)
+fp_t qwave_output(QWaveGen *gen)
 {
     if(!gen) {
         return 0;
     }
 
-    qfp_t out = _qwave_out(gen) * gen->amp;
+    fp_t out = _qwave_out(gen) * gen->amp;
 
     gen->t += gen->ts;
     gen->t = _fmodf(gen->t, gen->period);
     return out;
 }
 
-int qwave_bias_set(QWaveGen *gen, qfp_t bias)
+int qwave_bias_set(QWaveGen *gen, fp_t bias)
 {
     if(!gen) {
         return -1;
@@ -215,7 +215,7 @@ int qwave_bias_set(QWaveGen *gen, qfp_t bias)
     return 0;
 }
 
-int qwave_fs_set(QWaveGen *gen, qfp_t fs)
+int qwave_fs_set(QWaveGen *gen, fp_t fs)
 {
     if(!gen || fs <= 0) {
         return -1;
@@ -225,7 +225,7 @@ int qwave_fs_set(QWaveGen *gen, qfp_t fs)
     return 0;
 }
 
-int qwave_frq_set(QWaveGen *gen, qfp_t frq)
+int qwave_frq_set(QWaveGen *gen, fp_t frq)
 {
     if(!gen || frq <= 0) {
         return -1;
@@ -236,7 +236,7 @@ int qwave_frq_set(QWaveGen *gen, qfp_t frq)
     return 0;
 }
 
-int qwave_amp_set(QWaveGen *gen, qfp_t amp)
+int qwave_amp_set(QWaveGen *gen, fp_t amp)
 {
     if(!gen || amp <= 0) {
         return -1;
