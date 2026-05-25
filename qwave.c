@@ -73,11 +73,6 @@ static fp_t _fsin(fp_t deg)
     return sign * sin_val;
 }
 
-static inline fp_t _fcos(fp_t x)
-{
-    return _fsin(x + 90);
-}
-
 static inline fp_t _gen_sin(QWaveGen *gen)
 {
     fp_t x = (gen->t * 360) * gen->frq;
@@ -238,10 +233,10 @@ int qwave_frq_set(QWaveGen *gen, fp_t frq)
 
 int qwave_amp_set(QWaveGen *gen, fp_t amp)
 {
-    if(!gen || amp <= 0) {
+    if(!gen || amp < 0) {
         return -1;
     }
-    gen->amp = amp / 2;
+    gen->amp = amp;
     return 0;
 }
 
