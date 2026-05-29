@@ -73,11 +73,6 @@ static fp_t _fsin(fp_t deg)
     return sign * sin_val;
 }
 
-static inline fp_t _fcos(fp_t x)
-{
-    return _fsin(x + 90);
-}
-
 static inline fp_t _gen_sin(QWaveGen *gen)
 {
     fp_t x = (gen->t * 360) * gen->frq;
@@ -130,7 +125,7 @@ static inline fp_t _gen_noise(QWaveGen *gen)
     x ^= x << 5;
     gen->prng_state = x;
     // Map x (0 ~ 0xffffffffu) to [-1, 1]
-    gen->output = ((fp_t)x / 0xffffffffu) * 2 - 1;
+    gen->output = ((fp_t)x / (fp_t)0xffffffffu) * 2 - 1;
     return gen->output + gen->bias;
 }
 
