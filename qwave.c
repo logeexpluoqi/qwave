@@ -1,14 +1,16 @@
 /**
- * @ Author: luoqi
- * @ Create Time: 2024-11-08 17:16
- * @ Modified by: luoqi
- * @ Modified time: 2025-03-13 22:48
- * @ Description:
+ * Author: luoqi
+ * Created Date: 2025-12-23 16:08:59
+ * Last Modified: 2026-11-21 00:37:39
+ * Modified By: luoqi at <**@****>
+ * Copyright (c) 2026 <*****>
+ * Description:
  */
 
 #include "qwave.h"
 
-static const fp_t _fast_sin_table[91] = {
+// clang-format off
+static const fp_t fast_sin_table_[91] = {
     0.0,           0.017452406,   0.034899497,   0.052335956,   0.069756474,
     0.087155743,   0.104528463,   0.121869343,   0.139173101,   0.156434465,
     0.173648178,   0.190809,      0.207911,      0.224951,      0.241922,
@@ -29,15 +31,16 @@ static const fp_t _fast_sin_table[91] = {
     0.996195,      0.997564,      0.99863,       0.999391,      0.999848,
     1.0
 };
+// clang-format on
 
-static inline fp_t _fmodf(fp_t x, fp_t y)
+static inline fp_t fmodf_(fp_t x, fp_t y)
 {
     if(y == 0) {
         return NAN;
     }
 
     fp_t abs_y = y < 0 ? -y : y;
-    fp_t sign_x = x < 0 ? -1 : 1;
+    fp_t sign_x = x < 0 ? -1.0f : 1.0f;
     fp_t abs_x = x < 0 ? -x : x;
 
     fp_t div = abs_x / abs_y;
@@ -48,201 +51,195 @@ static inline fp_t _fmodf(fp_t x, fp_t y)
     return sign_x * result;
 }
 
-static fp_t _fsin(fp_t deg)
+static fp_t sin_(fp_t deg)
 {
-    deg = _fmodf(deg, 360);
+    deg = fmodf_(deg, 360.0f);
 
     int sign = 1;
     // Use the periodic symmetry of sin
-    if(deg > 180) {
-        deg -= 180;
+    if(deg > 180.0f) {
+        deg -= 180.0f;
         sign = -1;
     }
-    if(deg > 90) {
-        deg = 180 - deg;
+    if(deg > 90.0f) {
+        deg = 180.0f - deg;
     }
 
     // Calculate the lookup table index and interpolation factor
     int index = (int)deg; // 1° resolution
     if(index >= 90) {
-        return sign * _fast_sin_table[90];
+        return sign * fast_sin_table_[90];
     }
     fp_t fraction = deg - index;
 
-    fp_t sin_val = _fast_sin_table[index] * (1 - fraction) + _fast_sin_table[index + 1] * fraction;
+    fp_t sin_val = fast_sin_table_[index] * (1.0f - fraction) + fast_sin_table_[index + 1] * fraction;
     return sign * sin_val;
 }
 
-static inline fp_t _gen_sin(QWaveGen *gen)
+/* All gen_*_ functions return the raw waveform in normalized units.
+ * Amplitude scaling and bias are applied centrally in qwave_output(),
+ * so that amp never scales the DC bias. */
+
+static inline fp_t gen_sin_(QWaveCore *core)
 {
-    fp_t x = (gen->t * 360) * gen->frq;
-    gen->output = _fsin(x);
-    return gen->output + gen->bias;
+    return sin_((core->t * 360.0f) * core->frq);
 }
 
-static inline fp_t _gen_tri(QWaveGen *gen)
+static inline fp_t gen_tri_(QWaveCore *core)
 {
-    fp_t norm = gen->t * gen->frq;
+    fp_t norm = core->t * core->frq;
 
-    if(norm < 0.25) {
-        gen->output = 4 * norm;
-    } else if(norm < 0.75) {
-        gen->output = 2 - 4 * norm;
-    } else {
-        gen->output = 4 * norm - 4;
+    if(norm < 0.25f) {
+        return 4.0f * norm;
+    } else if(norm < 0.75f) {
+        return 2.0f - 4.0f * norm;
     }
-    return gen->output + gen->bias;
+    return 4.0f * norm - 4.0f;
 }
 
-static inline fp_t _gen_saw(QWaveGen *gen)
+static inline fp_t gen_saw_(QWaveCore *core)
 {
-    gen->output = gen->t * gen->frq;
-    return gen->output;
+    return core->t * core->frq;
 }
 
-static inline fp_t _gen_antsaw(QWaveGen *gen)
+static inline fp_t gen_antsaw_(QWaveCore *core)
 {
-    gen->output = -(gen->t * gen->frq);
-    return gen->output + gen->bias;
+    return -(core->t * core->frq);
 }
 
-static inline fp_t _gen_sqr(QWaveGen *gen)
+static inline fp_t gen_sqr_(QWaveCore *core)
 {
     // Square wave: first half period: +1; second half: -1.
-    if(gen->t < gen->half_period) {
-        gen->output = 1;
-    } else {
-        gen->output = -1;
-    }
-    return gen->output + gen->bias;
+    return (core->t < core->half_period) ? 1.0f : -1.0f;
 }
 
-static inline fp_t _gen_noise(QWaveGen *gen)
+static inline fp_t gen_noise_(QWaveCore *core)
 {
-    uint32_t x = gen->prng_state;
+    uint32_t x = core->prng_state;
     x ^= x << 13;
     x ^= x >> 17;
     x ^= x << 5;
-    gen->prng_state = x;
+    core->prng_state = x;
     // Map x (0 ~ 0xffffffffu) to [-1, 1]
-    gen->output = ((fp_t)x / (fp_t)0xffffffffu) * 2 - 1;
-    return gen->output + gen->bias;
+    return ((fp_t)x / (fp_t)0xffffffffu) * 2.0f - 1.0f;
 }
 
-int qwave_init(QWaveGen *gen, QWaveType type, fp_t fs, fp_t frq, fp_t bias, uint32_t seed)
+int qwave_init(QWaveCore *core, QWaveType type, fp_t fs, fp_t frq, fp_t bias, uint32_t seed)
 {
-    if(!gen || fs <= 0 || frq <= 0) {
+    if(!core || fs <= 0 || frq <= 0 || type < QWAVE_TYPE_SINE || type > QWAVE_TYPE_SQUARE) {
         return -1;
     }
 
-    gen->type = type;
-    gen->bias = bias;
-    gen->fs = fs;
-    gen->frq = frq;
-    gen->period = 1.0 / frq;
-    gen->half_period = gen->period * 0.5;
-    gen->ts = 1.0 / fs;
-    gen->output = 0;
-    gen->amp = 0.0;
-    gen->t = 0;
-    gen->seed = seed;
-    gen->prng_state = (seed == 0) ? 2463534242UL : seed;
+    core->type = type;
+    core->bias = bias;
+    core->fs = fs;
+    core->frq = frq;
+    core->period = 1.0f / frq;
+    core->half_period = core->period * 0.5f;
+    core->ts = 1.0f / fs;
+    core->output = 0;
+    core->amp = 1.0f;
+    core->t = 0;
+    core->seed = seed;
+    core->prng_state = (seed == 0) ? 2463534242UL : seed;
 
     return 0;
 }
 
-int qwave_signal_set(QWaveGen *gen, QWaveType type)
+int qwave_signal_set(QWaveCore *core, QWaveType type)
 {
-    if(!gen) {
+    if(!core || type < QWAVE_TYPE_SINE || type > QWAVE_TYPE_SQUARE) {
         return -1;
     }
-    gen->type = type;
-    gen->t = 0;
-    gen->output = 0;
+    core->type = type;
+    core->t = 0;
+    core->output = 0;
     return 0;
 }
 
-static inline fp_t _qwave_out(QWaveGen *gen)
+static inline fp_t qwave_out_(QWaveCore *core)
 {
-    if(!gen) {
-        return 0;
-    }
-    switch(gen->type) {
+    switch(core->type) {
     case QWAVE_TYPE_SINE:
-        return _gen_sin(gen);
+        return gen_sin_(core);
     case QWAVE_TYPE_TRIANGLE:
-        return _gen_tri(gen);
+        return gen_tri_(core);
     case QWAVE_TYPE_SAWTOOTH:
-        return _gen_saw(gen);
+        return gen_saw_(core);
     case QWAVE_TYPE_ANTSAWTOOTH:
-        return _gen_antsaw(gen);
+        return gen_antsaw_(core);
     case QWAVE_TYPE_SQUARE:
-        return _gen_sqr(gen);
+        return gen_sqr_(core);
     case QWAVE_TYPE_NOISE:
-        return _gen_noise(gen);
+        return gen_noise_(core);
     default:
         return 0;
     }
 }
 
-fp_t qwave_output(QWaveGen *gen)
+fp_t qwave_output(QWaveCore *core)
 {
-    if(!gen) {
+    if(!core) {
         return 0;
     }
 
-    fp_t out = _qwave_out(gen) * gen->amp;
+    /* amp scales only the raw waveform; bias is a pure DC offset */
+    core->output = qwave_out_(core) * core->amp + core->bias;
 
-    gen->t += gen->ts;
-    gen->t = _fmodf(gen->t, gen->period);
-    return out;
+    core->t += core->ts;
+    core->t = fmodf_(core->t, core->period);
+    return core->output;
 }
 
-int qwave_bias_set(QWaveGen *gen, fp_t bias)
+int qwave_bias_set(QWaveCore *core, fp_t bias)
 {
-    if(!gen) {
+    if(!core) {
         return -1;
     }
-    gen->bias = bias;
+    core->bias = bias;
     return 0;
 }
 
-int qwave_fs_set(QWaveGen *gen, fp_t fs)
+int qwave_fs_set(QWaveCore *core, fp_t fs)
 {
-    if(!gen || fs <= 0) {
+    if(!core || fs <= 0) {
         return -1;
     }
-    gen->fs = fs;
-    gen->ts = 1.0 / fs;
+    core->fs = fs;
+    core->ts = 1.0f / fs;
     return 0;
 }
 
-int qwave_frq_set(QWaveGen *gen, fp_t frq)
+int qwave_frq_set(QWaveCore *core, fp_t frq)
 {
-    if(!gen || frq <= 0) {
+    if(!core || frq <= 0) {
         return -1;
     }
-    gen->frq = frq;
-    gen->period = 1.0 / frq;
-    gen->half_period = gen->period * 0.5;
+    core->frq = frq;
+    core->period = 1.0f / frq;
+    core->half_period = core->period * 0.5f;
+    /* wrap the phase into the new period to avoid a one-sample phase jump */
+    core->t = fmodf_(core->t, core->period);
     return 0;
 }
 
-int qwave_amp_set(QWaveGen *gen, fp_t amp)
+int qwave_amp_set(QWaveCore *core, fp_t amp)
 {
-    if(!gen || amp <= 0) {
+    if(!core || amp < 0) {
         return -1;
     }
-    gen->amp = amp;
+    core->amp = amp;
     return 0;
 }
 
-int qwave_reset(QWaveGen *gen)
+int qwave_reset(QWaveCore *core)
 {
-    if(!gen) {
+    if(!core) {
         return -1;
     }
-    gen->t = 0;
-    gen->output = 0;
+    core->t = 0;
+    core->output = 0;
+    /* restore the PRNG so noise sequences are reproducible after reset */
+    core->prng_state = (core->seed == 0) ? 2463534242UL : core->seed;
     return 0;
 }
